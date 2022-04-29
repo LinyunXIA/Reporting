@@ -1,20 +1,35 @@
-import pandas as pd  #vlookup
-import openpyxl
-import glob
+from venv import create
+from openpyxl import load_workbook, Workbook #合并
+import glob #合并
+import pandas as pd  # 比对
+import datetime
 import os
+import shutil # file operation
 
- #=======合并
-path = "D:\\python\\files\\tmp\\"
+ 
+#---变量
+path_tmp = "D:\\python\\files\\tmp\\"
+pathRMH = "D:\\python\\files\\"
+path_folder="D:\\python\\files\\result\\"
+day_folder=datetime.datetime.now().strftime('%Y')+"\\"+datetime.datetime.now().strftime('%m')+ "\\" + datetime.datetime.now().strftime('%d')
+time_folder = datetime.datetime.now().strftime("%H")
 new_workbook = Workbook()
 new_sheet = new_workbook.active
- 
+mkdir_target_path = "D:\\python\\files\\result\\" + day_folder
+new_target_path = mkdir_target_path +"\\"+ time_folder
+
+# -- 新建文件夹
+#if os.path.isdir(mkdir_target_path):
+#    os.mkdir(os.path.join(mkdir_target_path,time_folder))
+if not os.path.exists(new_target_path):
+    os.makedirs(new_target_path)
  
 # 用flag变量明确新表是否已经添加了表头，只要添加过一次就无须重复再添加 
 # 0 or 1
 flag = 1
  
  
-for file in glob.glob(path + '/*.xlsx'):
+for file in glob.glob(path_tmp + '/*.xlsx'):
     workbook = load_workbook(file)
     sheet = workbook.active
  
@@ -41,35 +56,30 @@ for file in glob.glob(path + '/*.xlsx'):
         for cell in sheet[row]:
             data_lst.append(cell.value)
         new_sheet.append(data_lst)
- 
- 
-new_workbook.save(path + '/' + 'temp.xlsx')
+  
+new_workbook.save(path_tmp + '/' + 'temp.xlsx')
 
 #---筛选比对 vlookup
 
-#opera_result
-dfoperaorg1=pd.read_excel('D:/python/files/opera.xlsx',sheet_name='Sheet1')
+dforg=pd.read_excel(path_tmp + '/' + 'temp.xlsx',sheet_name='Sheet')
+dfRMH=pd.read_excel(pathRMH + '/' + 'RMH.xlsx',sheet_name='RPA SBRP')
+dfmailbox=pd.read_excel(pathRMH + '/' + 'RMH.xlsx',sheet_name='Details')
+data1=dforg.merge(dfRMH, on=['Inncode'])
+data2=data1.merge(dfmailbox,on=['Inncode'])
+data2.to_csv(path_tmp + '/' + 'result.csv',index=False)
 
-dfRMH=pd.read_excel('D:/python/files/RMH.xlsx',sheet_name='RPA SBRP')
-
-dfoperamail=pd.read_excel('D:/python/files/RMH.xlsx',sheet_name='Details')
-
-dataopera1=dfoperaorg1.merge(dfRMH, on=['Inncode'])
-
-dataopera=dataopera1.merge(dfoperamail,on=['Inncode'])
-
-#dataopera1.to_csv('D:/python/files/opera_result.csv')
-
-dataopera.to_csv('D:/python/files/opera_result.csv')
-
-#oasis_result
-dfoasisorg1=pd.read_excel('D:/python/files/oasis.xlsx',sheet_name='Sheet1')
-
-dfoasismail=pd.read_excel('D:/python/files/RMH.xlsx',sheet_name='Details')
-
-dataoasis1=dfoasisorg1.merge(dfRMH, on=['Inncode'])
-
-dataoasis=dataoasis1.merge(dfoasismail,on=['Inncode'])
-
-dataoasis.to_csv('D:/python/files/oasis_result.csv')
-
+#---移动文件
+def move_file(old_path,new_path):
+    print(old_path)
+    print(new_path)
+    filelist = os.listdir(old_path)
+    print(filelist)
+    for file in filelist:
+        src = os.path.join(old_path, file)
+        dst = os.path.join(new_path, file)
+        print('src:',src)
+        print('dst:',dst)
+        shutil.move(src,dst)
+ 
+if __name__=='__main__':
+    move_file(path_tmp,new_target_path)
