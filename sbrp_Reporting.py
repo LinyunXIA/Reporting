@@ -37,7 +37,7 @@ merged_df = pd.concat(dfs, ignore_index=True)
 
 # 5. 读取基准Excel文件并提取需要的列
 org_folder = "org"
-base_file = os.path.join(default_path, org_folder, "GC Hotel System List 2024.xlsx")
+base_file = os.path.join(default_path, org_folder, "GC Hotel System List 2025.xlsx")
 base_df = pd.read_excel(base_file, sheet_name="Details")
 
 selected_columns = base_df[["Inncode", "ITM", "IT E-mail1", "IT E-mail2", "RPA RMH"]]
@@ -51,5 +51,21 @@ final_report = os.path.join(save_base, "final_report.xlsx")
 
 merged_df.to_excel(temp_file, index=False)
 final_df.to_excel(final_report, index=False)
+
+# 新增功能：提取ErrorMsg不为空的行并保存到final_report_err.xlsx
+try:
+    # 读取temp文件
+    temp_df = pd.read_excel(temp_file)
+
+    # 筛选出ErrorMsg列有值的行
+    error_rows = temp_df[temp_df['ErrorMsg'].notna()]
+
+    if not error_rows.empty:
+        # 保存错误信息到final_report_err.xlsx
+        error_report = os.path.join(save_base, "final_report_err.xlsx")
+        error_rows.to_excel(error_report, index=False)
+        print("已成功提取并保存错误信息至:", error_report)
+except Exception as e:
+    print(f"在处理错误信息时出错: {str(e)}")
 
 print("文件已成功处理并保存至:", save_base)
